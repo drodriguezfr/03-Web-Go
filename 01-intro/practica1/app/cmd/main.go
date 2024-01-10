@@ -1,0 +1,130 @@
+package main
+
+import (
+	"app/product"
+	"encoding/json"
+	"fmt"
+	"io"
+	"net/http"
+	"os"
+	"strconv"
+
+	"github.com/go-chi/chi/v5"
+)
+
+func main() {
+
+	// Abrir el archivo JSON
+	file, err := os.Open("products.json")
+	if err != nil {
+		fmt.Println("Error al abrir el archivo", err)
+		return
+	}
+
+	defer file.Close()
+
+	// Leer el archivo JSON
+	data, err := io.ReadAll(file)
+	if err != nil {
+		fmt.Println("Error al leer el archivo", err)
+		return
+	}
+
+	// Inicializar mapa de productos
+	var products []product.Product
+
+	// Decodificar el archivo JSON
+	err = json.Unmarshal(data, &products)
+	if err != nil {
+		fmt.Println("Error al decodificar el archivo", err)
+		return
+	}
+
+	//fmt.Println(products)
+
+	r := chi.NewRouter()
+
+	r.Get("/ping", func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte("pong"))
+	})
+
+	r.Route("/products", func(r chi.Router) {
+
+		r.Get("/", func(w http.ResponseWriter, r *http.Request) {
+			// Convertir el slice a formato JSON
+			jsonData, err := json.Marshal(products)
+			if err != nil {
+				http.Error(w, "Error al convertir el slice a JSON", http.StatusInternalServerError)
+				return
+			}
+
+			// Configurar la respuesta HTTP
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusOK)
+
+			w.Write(jsonData)
+		})
+
+		r.Get("/{id}", func(w http.ResponseWriter, r *http.Request) {
+			// Obtener el ID del producto
+			id := chi.URLParam(r, "id")
+
+			// Buscar el producto
+			for _, product := range products {
+				strId := strconv.Itoa(product.ID)
+				if strId == id {
+					// Convertir el producto a formato JSON
+					jsonData, err := json.Marshal(product)
+					if err != nil {
+						http.Error(w, "Error al convertir el producto a JSON", http.StatusInternalServerError)
+						return
+					}
+
+					// Configurar la respuesta HTTP
+					w.Header().Set("Content-Type", "application/json")
+					w.WriteHeader(http.StatusOK)
+
+					w.Write(jsonData)
+					return
+				}
+			}
+
+			// Configurar la respuesta HTTP
+			w.WriteHeader(http.StatusNotFound)
+		})
+
+		r.Get("/search", func(w http.ResponseWriter, r *http.Request) {
+			// Obtener el parámetro de búsqueda
+			query := r.URL.Query().Get("priceGt")
+
+			// Buscar los productos
+			var results []product.Product
+			for _, product := range products {
+				queryFloat, err := strconv.ParseFloat(query, 64)
+				if err != nil {
+					http.Error(w, "Error al convertir el parámetro de búsqueda a float", http.StatusBadRequest)
+					return
+				}
+				if product.Price > queryFloat {
+					results = append(results, product)
+				}
+			}
+
+			// Convertir los productos a formato JSON
+			jsonData, err := json.Marshal(results)
+			if err != nil {
+				http.Error(w, "Error al convertir los productos a JSON", http.StatusInternalServerError)
+				return
+			}
+
+			// Configurar la respuesta HTTP
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusOK)
+
+			w.Write(jsonData)
+		})
+	})
+
+	http.ListenAndServe(":8080", r)
+
+}
