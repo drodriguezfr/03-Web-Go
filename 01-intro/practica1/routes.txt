@@ -1,18 +1,4 @@
-package main
-
-import (
-	"app/product"
-	"encoding/json"
-	"fmt"
-	"io"
-	"net/http"
-	"os"
-	"strconv"
-
-	"github.com/go-chi/chi/v5"
-)
-
-func main() {
+package practica1
 
 	// Abrir el archivo JSON
 	file, err := os.Open("products.json")
@@ -31,7 +17,7 @@ func main() {
 	}
 
 	// Inicializar mapa de productos
-	var products []product.Product
+	var products []internal.Product
 
 	// Decodificar el archivo JSON
 	err = json.Unmarshal(data, &products)
@@ -39,16 +25,12 @@ func main() {
 		fmt.Println("Error al decodificar el archivo", err)
 		return
 	}
-
-	//fmt.Println(products)
-
 	r := chi.NewRouter()
 
 	r.Get("/ping", func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("pong"))
 	})
-
-	r.Route("/products", func(r chi.Router) {
+r.Route("/products", func(r chi.Router) {
 
 		r.Get("/", func(w http.ResponseWriter, r *http.Request) {
 			// Convertir el slice a formato JSON
@@ -98,7 +80,7 @@ func main() {
 			query := r.URL.Query().Get("priceGt")
 
 			// Buscar los productos
-			var results []product.Product
+			var results []internal.Product
 			for _, product := range products {
 				queryFloat, err := strconv.ParseFloat(query, 64)
 				if err != nil {
@@ -124,7 +106,3 @@ func main() {
 			w.Write(jsonData)
 		})
 	})
-
-	http.ListenAndServe(":8080", r)
-
-}
