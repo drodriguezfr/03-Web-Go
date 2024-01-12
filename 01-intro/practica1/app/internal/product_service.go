@@ -20,4 +20,16 @@ var (
 type ProductService interface {
 	// Save saves a product
 	Save(product *Product) (err error)
+
+	// Get gets all products
+	//Get() (products []Product, err error)
+
+	// GetByID gets a product
+	GetByID(id int) (product Product, err error)
+
+	// Update updates a product
+	Update(product *Product) (err error)
+
+	// Delete deletes a product
+	Delete(id int) (err error)
 }

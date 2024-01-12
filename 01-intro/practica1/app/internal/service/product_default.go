@@ -66,3 +66,45 @@ func (p *ProductDefault) Save(product *internal.Product) (err error) {
 	}
 	return
 }
+
+// GetByID gets a product
+func (p *ProductDefault) GetByID(id int) (product internal.Product, err error) {
+	// get product
+	product, err = p.rp.GetByID(id)
+	if err != nil {
+		switch err {
+		case internal.ErrProductNotFound:
+			err = fmt.Errorf("%w: id", internal.ErrProductNotFound)
+		}
+		return
+	}
+	return
+}
+
+// Update updates a product
+func (p *ProductDefault) Update(product *internal.Product) (err error) {
+	// update product
+	err = p.rp.Update(product)
+	if err != nil {
+		switch err {
+		case internal.ErrProductNotFound:
+			err = fmt.Errorf("%w: id", internal.ErrProductNotFound)
+		}
+		return
+	}
+	return
+}
+
+// Delete deletes a product
+func (p *ProductDefault) Delete(id int) (err error) {
+	// delete product
+	err = p.rp.Delete(id)
+	if err != nil {
+		switch err {
+		case internal.ErrProductNotFound:
+			err = fmt.Errorf("%w: id", internal.ErrProductNotFound)
+		}
+		return
+	}
+	return
+}
